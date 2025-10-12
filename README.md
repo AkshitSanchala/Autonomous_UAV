@@ -27,6 +27,24 @@ The `apply_boids` method in the `Drone` class is the heart of the Boid algorithm
     -   **Cohesion**: It calculates the average position of its neighbors (the center of the local flock) and creates a force to move toward it.
 -   **Applies Forces**: These three forces are scaled by their respective weights (`SEPARATION_WEIGHT`, `ALIGNMENT_WEIGHT`, `COHESION_WEIGHT`) and applied to the drone's acceleration.
 
+### 3. Boid Rule Weights
+
+The behavior of the swarm is highly sensitive to the weights assigned to the three boid rules. There are no "correct" values, as the ideal weights depend on the desired emergent behavior. However, here is a general guide to their ranges and effects:
+
+-   **`COHESION_WEIGHT`**: Typically a small value (e.g., `0.01` - `0.1`).
+    -   **Too low**: The swarm will be loosely gathered and may break apart.
+    -   **Too high**: The swarm will collapse into a tight, ball-like cluster.
+
+-   **`ALIGNMENT_WEIGHT`**: Usually the most influential weight (e.g., `0.1` - `0.5`).
+    -   **Too low**: Drones will not form a cohesive direction and will appear disorganized.
+    -   **Too high**: The swarm will move rigidly, like a single unit, with little individual variation.
+
+-   **`SEPARATION_WEIGHT`**: This weight is often very small, as it can easily overpower the others (e.g., `0.001` - `0.01`).
+    -   **Too low**: Drones will not avoid each other effectively and may overlap.
+    -   **Too high**: The swarm will be pushed apart and may disperse entirely.
+
+Finding the right balance between these weights is key to achieving the desired flocking behavior.
+
 ### 2. Simulation Enhancements
 
 We've added several features to create a more advanced and visually intuitive simulation:

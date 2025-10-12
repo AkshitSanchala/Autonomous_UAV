@@ -21,11 +21,21 @@ class Drone:
     def apply_force(self, force):
         self.acc += force
 
-    def wrap_edges(self):
-        if self.pos.x > SCREEN_WIDTH: self.pos.x = 0
-        elif self.pos.x < 0: self.pos.x = SCREEN_WIDTH
-        if self.pos.y > SCREEN_HEIGHT: self.pos.y = 0
-        elif self.pos.y < 0: self.pos.y = SCREEN_HEIGHT
+    def avoid_edges(self):
+        """Applies a steering force to keep the drone within the screen boundaries."""
+        turn_force = pygame.math.Vector2(0, 0)
+        
+        if self.pos.x < TURN_MARGIN:
+            turn_force.x = TURN_FORCE
+        elif self.pos.x > SCREEN_WIDTH - TURN_MARGIN:
+            turn_force.x = -TURN_FORCE
+        
+        if self.pos.y < TURN_MARGIN:
+            turn_force.y = TURN_FORCE
+        elif self.pos.y > SCREEN_HEIGHT - TURN_MARGIN:
+            turn_force.y = -TURN_FORCE
+            
+        self.apply_force(turn_force)
 
     def steer_to(self, target):
         """Calculates the steering force to move towards a target."""
@@ -163,7 +173,7 @@ class Drone:
             self.vel.scale_to_length(MAX_SPEED)
         self.pos += self.vel
         self.acc *= 0
-        self.wrap_edges()
+        self.avoid_edges()
 
     def draw(self, screen):
         # --- NEW: Draw the perception radius ---
