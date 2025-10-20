@@ -2,7 +2,7 @@ import pygame
 import random
 import math
 import uuid
-from settings import *
+import settings
 
 class Drone:
     """
@@ -11,13 +11,13 @@ class Drone:
     def __init__(self, x, y):
         self.pos = pygame.math.Vector2(x, y)
         angle = random.uniform(0, 2 * math.pi)
-        self.vel = pygame.math.Vector2(math.cos(angle), math.sin(angle)) * random.uniform(1, MAX_SPEED)
+        self.vel = pygame.math.Vector2(math.cos(angle), math.sin(angle)) * random.uniform(1, settings.MAX_SPEED)
         self.acc = pygame.math.Vector2(0, 0)
         self.leader_pos = None
         self.uid = uuid.uuid4().int
         self.state = 'PEER'
         self.leader_id = self.uid
-        self.color = PEER_COLOR
+        self.color = settings.PEER_COLOR
 
     def apply_force(self, force):
         self.acc += force
@@ -26,15 +26,15 @@ class Drone:
         """Applies a steering force to keep the drone within the screen boundaries."""
         turn_force = pygame.math.Vector2(0, 0)
         force_multiplier = 3
-        if self.pos.x < TURN_MARGIN:
-            turn_force.x = TURN_FORCE * force_multiplier
-        elif self.pos.x > SCREEN_WIDTH - TURN_MARGIN:
-            turn_force.x = -TURN_FORCE * force_multiplier
+        if self.pos.x < settings.TURN_MARGIN:
+            turn_force.x = settings.TURN_FORCE * force_multiplier
+        elif self.pos.x > settings.SCREEN_WIDTH - settings.TURN_MARGIN:
+            turn_force.x = -settings.TURN_FORCE * force_multiplier
         
-        if self.pos.y < TURN_MARGIN:
-            turn_force.y = TURN_FORCE * force_multiplier
-        elif self.pos.y > SCREEN_HEIGHT - TURN_MARGIN:
-            turn_force.y = -TURN_FORCE * force_multiplier
+        if self.pos.y < settings.TURN_MARGIN:
+            turn_force.y = settings.TURN_FORCE * force_multiplier
+        elif self.pos.y > settings.SCREEN_HEIGHT - settings.TURN_MARGIN:
+            turn_force.y = -settings.TURN_FORCE * force_multiplier
             
         self.apply_force(turn_force)
 
@@ -44,10 +44,10 @@ class Drone:
         if desired.magnitude() == 0:
             return pygame.math.Vector2(0,0)
         
-        desired.scale_to_length(MAX_SPEED)
+        desired.scale_to_length(settings.MAX_SPEED)
         steer = desired - self.vel
-        if steer.magnitude() > MAX_FORCE:
-            steer.scale_to_length(MAX_FORCE)
+        if steer.magnitude() > settings.MAX_FORCE:
+            steer.scale_to_length(settings.MAX_FORCE)
         return steer
     
     def apply_boids(self, swarm):
@@ -60,7 +60,7 @@ class Drone:
         for other_drone in swarm:
             if other_drone is not self:
                 distance = self.pos.distance_to(other_drone.pos)
-                if 0 < distance < PERCEPTION_RADIUS:
+                if 0 < distance < settings.PERCEPTION_RADIUS:
                     neighbor_count += 1
                     steering_cohesion += other_drone.pos
                     steering_alignment += other_drone.vel
@@ -74,16 +74,16 @@ class Drone:
             steering_cohesion = self.steer_to(steering_cohesion)
             # Alignment
             steering_alignment /= neighbor_count
-            if steering_alignment.magnitude() > 0: steering_alignment.scale_to_length(MAX_SPEED)
+            if steering_alignment.magnitude() > 0: steering_alignment.scale_to_length(settings.MAX_SPEED)
             steering_alignment -= self.vel
             # Separation
             steering_separation /= neighbor_count
-            if steering_separation.magnitude() > 0: steering_separation.scale_to_length(MAX_SPEED)
+            if steering_separation.magnitude() > 0: steering_separation.scale_to_length(settings.MAX_SPEED)
             steering_separation -= self.vel
         
-        self.apply_force(steering_cohesion * COHESION_WEIGHT)
-        self.apply_force(steering_alignment * ALIGNMENT_WEIGHT)
-        self.apply_force(steering_separation * SEPARATION_WEIGHT)
+        self.apply_force(steering_cohesion * settings.COHESION_WEIGHT)
+        self.apply_force(steering_alignment * settings.ALIGNMENT_WEIGHT)
+        self.apply_force(steering_separation * settings.SEPARATION_WEIGHT)
 
     def seek(self, target):
         """Leader's behavior: move towards a target."""
@@ -112,7 +112,7 @@ class Drone:
                 continue
             
             distance = self.pos.distance_to(other_drone.pos)
-            if 0 < distance < PERCEPTION_RADIUS:
+            if 0 < distance < settings.PERCEPTION_RADIUS:
                 # --- Standard Boids calculations (applied to all neighbors) ---
                 neighbor_count += 1
                 steering_alignment += other_drone.vel
@@ -141,34 +141,34 @@ class Drone:
 
         # --- Finalize and Apply Forces ---
         # 1. Cohesion Force (only if a valid leader position was found)
-        if self.leader_pos is not None and min_hops <= MAX_HOPS:
+        if self.leader_pos is not None and min_hops <= settings.MAX_HOPS:
             steering_cohesion = self.steer_to(self.leader_pos)
             if self.leader_pos_hops > 0: # If it's a secondary follower
-                self.color = SECONDARY_FOLLOWER_COLOR # This logic now works perfectly with hops
+                self.color = settings.SECONDARY_FOLLOWER_COLOR # This logic now works perfectly with hops
 
         # 2. Boids Forces (if there were any neighbors)
         if neighbor_count > 0:
             # Alignment
             steering_alignment /= neighbor_count
-            if steering_alignment.magnitude() > 0: steering_alignment.scale_to_length(MAX_SPEED)
+            if steering_alignment.magnitude() > 0: steering_alignment.scale_to_length(settings.MAX_SPEED)
             steering_alignment -= self.vel
             # Separation
             steering_separation /= neighbor_count
-            if steering_separation.magnitude() > 0: steering_separation.scale_to_length(MAX_SPEED)
+            if steering_separation.magnitude() > 0: steering_separation.scale_to_length(settings.MAX_SPEED)
             steering_separation -= self.vel
 
         # 3. Apply all calculated forces
         if self.leader_pos is not None:
-            self.apply_force(steering_cohesion * min(float(min_hops+1),4) * COHESION_WEIGHT)
+            self.apply_force(steering_cohesion * min(float(min_hops+1),4) * settings.COHESION_WEIGHT)
         
-        self.apply_force(steering_alignment * ALIGNMENT_WEIGHT)
-        self.apply_force(steering_separation * SEPARATION_WEIGHT)
+        self.apply_force(steering_alignment * settings.ALIGNMENT_WEIGHT)
+        self.apply_force(steering_separation * settings.SEPARATION_WEIGHT)
 
     def update(self, swarm, target, leader_election_triggered):
         if leader_election_triggered:
             # Stage 1: Leader Election Propagation
             for other_drone in swarm:
-                if self.pos.distance_to(other_drone.pos) < PERCEPTION_RADIUS:
+                if self.pos.distance_to(other_drone.pos) < settings.PERCEPTION_RADIUS:
                     if other_drone.leader_id > self.leader_id:
                         self.leader_id = other_drone.leader_id
 
@@ -180,7 +180,7 @@ class Drone:
                 is_near_leader = False
                 for other_drone in swarm:
                     if other_drone.state == 'LEADER':
-                        if self.pos.distance_to(other_drone.pos) < PERCEPTION_RADIUS:
+                        if self.pos.distance_to(other_drone.pos) < settings.PERCEPTION_RADIUS:
                             is_near_leader = True
                             break
                 
@@ -193,16 +193,16 @@ class Drone:
 
         # Stage 3: Apply Behavior Based on State
         if self.state == 'LEADER':
-            self.color = LEADER_COLOR
-            if LEADER_FOLLOWS_MOUSE:
+            self.color = settings.LEADER_COLOR
+            if settings.LEADER_FOLLOWS_MOUSE:
                 self.seek(target)
             else:
                 self.apply_boids(swarm)
         elif self.state == 'FOLLOWER':
-            self.color = FOLLOWER_COLOR
+            self.color = settings.FOLLOWER_COLOR
             self.follow_leader(swarm)
         elif self.state == 'PEER':
-            self.color = PEER_COLOR
+            self.color = settings.PEER_COLOR
             if leader_election_triggered:
                 self.follow_leader(swarm)
             else: 
@@ -211,8 +211,8 @@ class Drone:
 
         # Physics update
         self.vel += self.acc
-        if self.vel.magnitude() > MAX_SPEED or self.vel.magnitude() < MAX_SPEED:
-            self.vel.scale_to_length(MAX_SPEED)
+        if self.vel.magnitude() > settings.MAX_SPEED or self.vel.magnitude() < settings.MAX_SPEED:
+            self.vel.scale_to_length(settings.MAX_SPEED)
         self.pos += self.vel
         self.acc *= 0
         self.avoid_edges()
@@ -220,11 +220,11 @@ class Drone:
     def draw(self, screen):
         # --- NEW: Draw the perception radius ---
         # Create a transparent surface
-        radius_surface = pygame.Surface((PERCEPTION_RADIUS * 2, PERCEPTION_RADIUS * 2), pygame.SRCALPHA)
+        radius_surface = pygame.Surface((settings.PERCEPTION_RADIUS * 2, settings.PERCEPTION_RADIUS * 2), pygame.SRCALPHA)
         # Draw the circle on the transparent surface
-        pygame.draw.circle(radius_surface, RANGE_COLOR, (PERCEPTION_RADIUS, PERCEPTION_RADIUS), PERCEPTION_RADIUS)
+        pygame.draw.circle(radius_surface, settings.RANGE_COLOR, (settings.PERCEPTION_RADIUS, settings.PERCEPTION_RADIUS), settings.PERCEPTION_RADIUS)
         # Blit the surface onto the main screen
-        screen.blit(radius_surface, (self.pos.x - PERCEPTION_RADIUS, self.pos.y - PERCEPTION_RADIUS))
+        screen.blit(radius_surface, (self.pos.x - settings.PERCEPTION_RADIUS, self.pos.y - settings.PERCEPTION_RADIUS))
 
         color = self.color
 
@@ -233,12 +233,12 @@ class Drone:
 
         # Calculate the three points of the triangle
         # Point 1: The "nose" of the triangle
-        p1 = self.pos + pygame.math.Vector2(TRIANGLE_HEIGHT / 2, 0).rotate(-angle)
+        p1 = self.pos + pygame.math.Vector2(settings.TRIANGLE_HEIGHT / 2, 0).rotate(-angle)
         
         # Point 2: The "bottom-left" corner
-        p2 = self.pos + pygame.math.Vector2(-TRIANGLE_HEIGHT / 2, TRIANGLE_BASE / 2).rotate(-angle)
+        p2 = self.pos + pygame.math.Vector2(-settings.TRIANGLE_HEIGHT / 2, settings.TRIANGLE_BASE / 2).rotate(-angle)
         
         # Point 3: The "bottom-right" corner
-        p3 = self.pos + pygame.math.Vector2(-TRIANGLE_HEIGHT / 2, -TRIANGLE_BASE / 2).rotate(-angle)
+        p3 = self.pos + pygame.math.Vector2(-settings.TRIANGLE_HEIGHT / 2, -settings.TRIANGLE_BASE / 2).rotate(-angle)
 
         pygame.draw.polygon(screen, color, [p1, p2, p3])
